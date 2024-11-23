@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sri Lankan NIC Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.8rem;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #34495e;
+            font-weight: 500;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        .result {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 8px;
+            background: #f8fafc;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result-item {
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .result-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .result-label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+
+        .result-value {
+            color: #34495e;
+        }
+
+        .error {
+            color: #e74c3c;
+            margin-top: 8px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .birthday-highlight {
+            background: #e8f4fc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>NIC Unga Bunga will analyse Sri Lankan NIC Number</h1>
+        <br>
+        <p> built by Yehan :) for fun 😅</p>
+        <div class="input-group">
+            <label for="nic">Enter NIC Number:</label>
+            <input type="text" id="nic" placeholder="e.g., 855420159v or 198554201590" maxlength="12">
+            <div class="error" id="error"></div>
+        </div>
+        <button onclick="analyzeNIC()">Analyze NIC</button>
+        
+        <div class="result" id="result">
+            <div class="result-item">
+                <div class="result-label">NIC Format</div>
+                <div class="result-value" id="format"></div>
+            </div>
+            <div class="result-item birthday-highlight">
+                <div class="result-label">Birth Date Information</div>
+                <div class="result-value" id="birthDate"></div>
+            </div>
+            <div class="result-item">
+                <div class="result-label">Gender</div>
+                <div class="result-value" id="gender"></div>
+            </div>
+            <div class="result-item">
+                <div class="result-label">Voting Status (Old Format Only)</div>
+                <div class="result-value" id="votingStatus"></div>
+            </div>
+            <div class="result-item">
+                <div class="result-label">New Format Number</div>
+                <div class="result-value" id="newFormat"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function calculateBirthDate(year, daysCode) {
+            // Adjust daysCode for females (subtract 500)
+            const actualDays = daysCode > 500 ? daysCode - 500 : daysCode;
+            
+            // Create date object for January 1st of the birth year
+            const date = new Date(year, 0);
+            
+            // Add the days (subtract 1 as days code starts from 1)
+            date.setDate(actualDays);
+            
+            // Format the date
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                          'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            return `${date.getDate()} ${months[date.getMonth()]} ${year}`;
+        }
+
+        function analyzeNIC() {
+            const nicInput = document.getElementById('nic').value.toUpperCase();
+            const errorElement = document.getElementById('error');
+            const resultElement = document.getElementById('result');
+
+            // Reset error and result visibility
+            errorElement.style.display = 'none';
+            resultElement.classList.remove('show');
+
+            // Validate input
+            const oldFormatRegex = /^[0-9]{9}[VX]$/;
+            const newFormatRegex = /^[0-9]{12}$/;
+
+            if (!oldFormatRegex.test(nicInput) && !newFormatRegex.test(nicInput)) {
+                errorElement.textContent = 'Please enter a valid NIC number';
+                errorElement.style.display = 'block';
+                return;
+            }
+
+            const isOldFormat = oldFormatRegex.test(nicInput);
+            let yearOfBirth, gender, votingStatus, newFormatNumber, daysCode;
+
+            if (isOldFormat) {
+                // Process old format
+                yearOfBirth = parseInt('19' + nicInput.substring(0, 2));
+                daysCode = parseInt(nicInput.substring(2, 5));
+                gender = daysCode > 500 ? 'Female' : 'Male';
+                votingStatus = nicInput.charAt(9) === 'V' ? 'Eligible to vote' : 'Not eligible to vote';
+                newFormatNumber = '19' + nicInput.substring(0, 9);
+            } else {
+                // Process new format
+                yearOfBirth = parseInt(nicInput.substring(0, 4));
+                daysCode = parseInt(nicInput.substring(4, 7));
+                gender = daysCode > 500 ? 'Female' : 'Male';
+                votingStatus = 'Not indicated in new format';
+                newFormatNumber = nicInput;
+            }
+
+            // Calculate birth date
+            const birthDate = calculateBirthDate(yearOfBirth, daysCode);
+
+            // Display results
+            document.getElementById('format').textContent = isOldFormat ? 'Old Format' : 'New Format';
+            document.getElementById('birthDate').textContent = birthDate;
+            document.getElementById('gender').textContent = gender;
+            document.getElementById('votingStatus').textContent = votingStatus;
+            document.getElementById('newFormat').textContent = newFormatNumber;
+
+            resultElement.classList.add('show');
+        }
+    </script>
+</body>
+</html>
